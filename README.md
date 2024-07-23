@@ -1,9 +1,5 @@
 after changes: <br />
-docker build -t webscraperdocker . <br />
 
-docker run -it --rm webscraperdocker <br />
-
-or makefile <br />
 make build <br />
 make run <br />
 
@@ -28,6 +24,5 @@ verify if user is added to group:  <br />
 
 groups $(whoami)<br />
 
-then build again  <br />
+then build again: make build <br />
 
-docker build -t webscraperdocker .
