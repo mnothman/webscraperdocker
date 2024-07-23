@@ -8,6 +8,12 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import re
+import logging
+from database import create_database, save_to_database
+
+#logging
+logging.basicConfig(filename='/app/output/scraper.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 #respect robots.txt
 def can_fetch(url):
@@ -37,37 +43,57 @@ def can_fetch(url):
     except requests.RequestException:
         return True
 
-def scrape_website(url):
-    if not can_fetch(url):
-        print(f"Scraping {url} is not allowed by robots.txt")
-        return
 
-# selenium for dynamic js 
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+def scrape_page(url, page):
+    try:
+        if not can_fetch(url):
+            logging.warning(f"Scraping {url} is not allowed by robots.txt")
+            return []
 
-    driver.get(url)
-    time.sleep(3)  #delay to allow the page to load
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        driver.get(url)
+        time.sleep(3)  #page loading
 
-    html_content = driver.page_source
-    driver.quit()
+        html_content = driver.page_source
+        driver.quit()
 
-    soup = BeautifulSoup(html_content, 'html.parser')
-    links = soup.find_all('a')
+        soup = BeautifulSoup(html_content, 'html.parser')
+        items = soup.find_all('div', class_='item')
 
+        data = []
+        for item in items:
+            title = item.find('h2').text
+            description = item.find('p').text
+            data.append((title, description, page))
+
+        logging.info(f"Successfully scraped {url}")
+
+        time.sleep(5) #server delay
+        return data
+    except Exception as e:
+        logging.error(f"Error scraping {url}: {e}")
+        return []
+
+def scrape_website(base_url, pages=5):
+    db_path = '/app/output/data.db'
+    create_database(db_path)
+    
     with open('/app/output/output.csv', 'w', newline='') as csvfile:
-        fieldnames = ['link']
+        fieldnames = ['title', 'description', 'page']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        for link in links:
-            writer.writerow({'link': link.get('href')})
 
-    #delay for server 
-    time.sleep(5)
+        for page in range(1, pages + 1):
+            paginated_url = f"{base_url}?page={page}"
+            data = scrape_page(paginated_url, page)
+            if data:
+                writer.writerows(data)
+                save_to_database(db_path, data)
 
 if __name__ == "__main__":
     url = 'https://example.com'
-    scrape_website(url)
+    scrape_website(url, pages = 5)
