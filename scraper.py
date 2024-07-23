@@ -11,7 +11,7 @@ import re
 import logging
 import argparse
 from database import create_database, save_to_database
-from pagination import get_total_pages
+from pagination import get_total_pages, get_base_url
 
 #logging
 logging.basicConfig(filename='/app/output/scraper.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -87,8 +87,10 @@ def scrape_website(base_url, pages):
     #for pagination from xml pagination.py
     total_pages = get_total_pages(base_url)
     if total_pages == 0:
-        logging.error("Unable to determine the number of pages.")
-        total_pages = pages #default pages if no sitemap found in pagination.py
+        #logging.error("Unable to determine the number of pages.")
+        logging.info("No sitemap found or unable to determine the number of pages. Scraping only the provided URL.")
+        #total_pages = pages #default pages if no sitemap found in pagination.py
+        total_pages = 1
 
     with open('/app/output/output.csv', 'w', newline='') as csvfile:
         fieldnames = ['title', 'description', 'page']
@@ -96,7 +98,7 @@ def scrape_website(base_url, pages):
         writer.writeheader()
 
         for page in range(1, min(total_pages, pages) + 1):
-            paginated_url = f"{base_url}?page={page}"
+            paginated_url = f"{base_url}?page={page}" if total_pages > 1 else base_url
             data = scrape_page(paginated_url, page)
             if data:
                 writer.writerows(data)
@@ -108,4 +110,11 @@ if __name__ == "__main__":
     parser.add_argument('--pages', type=int, default=5, help="Number of pages to scrape (default is 5)")
     args = parser.parse_args()
 
-    scrape_website(args.url, args.pages)
+    
+    base_url = get_base_url(args.url)
+    if base_url != args.url:
+        logging.info("Specific page URL provided. Skipping pagination and scraping only the given URL.")
+        scrape_website(args.url, 1)
+    else:
+        scrape_website(base_url, args.pages)
+    #test https://siteefy.com/sitemap_index.xml

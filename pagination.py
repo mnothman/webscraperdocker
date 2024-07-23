@@ -1,10 +1,14 @@
 import requests
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import xml.etree.ElementTree as ET
 import logging
 
 #default to w.e pages if no sitemap found
 DEFAULT_PAGES = 5
+
+def get_base_url(url):
+    parsed_url = urlparse(url)
+    return f"{parsed_url.scheme}://{parsed_url.netloc}"
 
 #get xml to see how many pages
 def get_sitemap_urls(base_url):
@@ -39,8 +43,11 @@ def get_total_pages(base_url):
     sitemap_urls = get_sitemap_urls(base_url)
     if not sitemap_urls:
         logging.error("No sitemap found.")
-        return DEFAULT_PAGES #if no xml page found with number of pages inside of it, then default to however many pages
+        #return DEFAULT_PAGES #if no site map xml page found with number of pages inside of it, then default to however many pages
+        return 0
     all_urls = []
     for sitemap_url in sitemap_urls:
         all_urls.extend(parse_sitemap(sitemap_url))
-    return len(all_urls) if all_urls else DEFAULT_PAGES #deal with default pages 
+   # return len(all_urls) if all_urls else DEFAULT_PAGES #deal with default pages 
+    return len(all_urls) if all_urls else 0
+
