@@ -5,6 +5,7 @@ import time
 from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import re
 
@@ -42,7 +43,12 @@ def scrape_website(url):
         return
 
 # selenium for dynamic js 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
     driver.get(url)
     time.sleep(3)  #delay to allow the page to load
 
@@ -52,7 +58,7 @@ def scrape_website(url):
     soup = BeautifulSoup(html_content, 'html.parser')
     links = soup.find_all('a')
 
-    with open('output.csv', 'w', newline='') as csvfile:
+    with open('/app/output/output.csv', 'w', newline='') as csvfile:
         fieldnames = ['link']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -63,5 +69,5 @@ def scrape_website(url):
     time.sleep(5)
 
 if __name__ == "__main__":
-    url = 'https://typewebsitehere.com'
+    url = 'https://example.com'
     scrape_website(url)

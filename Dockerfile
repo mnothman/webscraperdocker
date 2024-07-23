@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Install necessary packages
 RUN dnf -y update && \
-    dnf -y install wget unzip curl gnupg2 && \
+    dnf -y install wget unzip curl gnupg2 python3 python3-pip && \
     dnf clean all
 
 # Download Google Chrome RPM
@@ -28,7 +28,7 @@ RUN wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROMEDRIV
 
 # Install the Python dependencies
 COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the container
 COPY . .
@@ -38,4 +38,4 @@ ENV CHROME_BIN=/usr/bin/google-chrome
 ENV CHROME_DRIVER=/usr/bin/chromedriver
 
 # Set the default command to run the scraper
-CMD ["python", "scraper.py"]
+CMD ["python3", "scraper.py"]
