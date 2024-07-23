@@ -38,4 +38,4 @@ ENV CHROME_BIN=/usr/bin/google-chrome
 ENV CHROME_DRIVER=/usr/bin/chromedriver
 
 # Set the default command to run the scraper
-CMD ["python3", "scraper.py"]
+ENTRYPOINT ["python3", "scraper.py"]

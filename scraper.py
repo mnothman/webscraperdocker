@@ -9,7 +9,9 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import re
 import logging
+import argparse
 from database import create_database, save_to_database
+from pagination import get_total_pages
 
 #logging
 logging.basicConfig(filename='/app/output/scraper.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -78,16 +80,22 @@ def scrape_page(url, page):
         logging.error(f"Error scraping {url}: {e}")
         return []
 
-def scrape_website(base_url, pages=5):
+def scrape_website(base_url, pages):
     db_path = '/app/output/data.db'
     create_database(db_path)
     
+    #for pagination from xml pagination.py
+    total_pages = get_total_pages(base_url)
+    if total_pages == 0:
+        logging.error("Unable to determine the number of pages.")
+        total_pages = pages #default pages if no sitemap found in pagination.py
+
     with open('/app/output/output.csv', 'w', newline='') as csvfile:
         fieldnames = ['title', 'description', 'page']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-        for page in range(1, pages + 1):
+        for page in range(1, min(total_pages, pages) + 1):
             paginated_url = f"{base_url}?page={page}"
             data = scrape_page(paginated_url, page)
             if data:
@@ -95,5 +103,9 @@ def scrape_website(base_url, pages=5):
                 save_to_database(db_path, data)
 
 if __name__ == "__main__":
-    url = 'https://example.com'
-    scrape_website(url, pages = 5)
+    parser = argparse.ArgumentParser(description="Scrape a website")
+    parser.add_argument('url', type=str, help="URL to scrape")
+    parser.add_argument('--pages', type=int, default=5, help="Number of pages to scrape (default is 5)")
+    args = parser.parse_args()
+
+    scrape_website(args.url, args.pages)

@@ -1,9 +1,12 @@
 after changes: <br />
 
 make build <br />
-make run <br />
 
+handle url in cmd line now: 
 
+docker run -it --rm -v "$(pwd)/output:/app/output" webscraperdocker https://example.com  <br />
+
+--> will log data in scraper.log and sqlite data.db  <br /> <br />
 
 
 debugging:  <br /> 
